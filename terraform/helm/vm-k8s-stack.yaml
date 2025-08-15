@@ -1,0 +1,147 @@
+serviceAccount:
+  create: true
+operator:
+  enabled: true
+  createCRD: false
+defaultRules:
+  create: false
+
+victoria-metrics-operator:
+  createCRD: false
+  operator:
+    disable_prometheus_converter: false
+
+
+
+# -- Configures vmsingle params
+vmsingle:
+  annotations: {}
+  enabled: true
+
+  spec:
+    storage:
+      accessModes:
+        - ReadWriteOnce
+      resources:
+        requests:
+          storage: 40Gi 
+    retentionPeriod: "3d"
+    replicaCount: 1
+    resources:
+      limits:
+        cpu: 1000m
+        memory: 2560Mi
+      requests:
+        cpu: 500m
+        memory: 1536Mi
+    extraArgs:
+      loggerFormat: json
+      maxLabelsPerTimeseries: "60"
+      http.pathPrefix: /vmetrics
+
+  ingress:
+    enabled: false
+
+vmcluster:
+  enabled: false
+
+vmalert:
+  enabled: false
+
+vmagent:
+  enabled: true
+  spec:
+    extraArgs:
+      promscrape.maxScrapeSize: "67108864" # 64 MB 
+    scrapeInterval: 30s
+  rbac:
+    create: true
+    pspEnabled: false
+
+grafana:
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Loki
+          type: loki
+          access: proxy
+          url: http://loki.observability:3100
+          isDefault: false
+  enabled: true
+  resources:
+    requests:
+      cpu: 100m
+      memory: 512Mi
+    limits:
+      cpu: 500m
+      memory: 1024Mi
+  forceDeployDatasource: false
+  defaultDashboardsEnabled: true
+  vmServiceScrape:
+    enabled: true
+  ingress:
+    enabled: true
+    ingressClassName: nginx
+    annotations:
+      cert-manager.io/issuer: letsencrypt-prod
+      nginx.ingress.kubernetes.io/ssl-redirect: "true"
+
+    hosts:
+      - monitoring.opdevops.com
+    tls:
+      - hosts:
+          - monitoring.opdevops.com
+        secretName: grafana-tls
+        
+prometheus-node-exporter:
+  enabled: true
+  podLabels:
+    jobLabel: node-exporter
+  extraArgs:
+    - --collector.filesystem.ignored-mount-points=^/(dev|proc|sys|var/lib/docker/.+|var/lib/kubelet/.+)($|/)
+    - --collector.filesystem.ignored-fs-types=^(autofs|binfmt_misc|bpf|cgroup2?|configfs|debugfs|devpts|devtmpfs|fusectl|hugetlbfs|iso9660|mqueue|nsfs|overlay|proc|procfs|pstore|rpc_pipefs|securityfs|selinuxfs|squashfs|sysfs|tracefs)$
+  vmServiceScrape:
+    enabled: true
+    spec:
+      jobLabel: jobLabel
+  vmServiceScrape:
+    spec: {}
+
+
+## Service Monitors
+## Component scraping the kubelets
+kubelet:
+  enabled: true
+
+# -- Component scraping the kube api server
+kubeApiServer:
+  enabled: true
+
+# -- Component scraping the kube controller manager
+kubeControllerManager:
+  enabled: true
+
+# -Component scraping kubeDns. Use either this or coreDns
+kubeDns:
+  enabled: true
+
+# -- Component scraping coreDns. Use either this or kubeDns
+coreDns:
+  enabled: false
+
+## Component scraping etcd
+##
+kubeEtcd:
+  enabled: false
+
+## Component scraping kube scheduler
+##
+kubeScheduler:
+  enabled: true
+
+## Component scraping kube proxy
+##
+kubeProxy:
+  enabled: true
+

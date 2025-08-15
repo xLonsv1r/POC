@@ -1,0 +1,44 @@
+
+
+
+controller:
+
+  podAnnotations:
+    vector.logging/enabled: "true"
+  config:
+    enable-access-log: "true"
+  replicaCount: 1
+  minAvailable: 1
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+  autoscaling:
+    enabled: false
+  metrics:
+    enabled: true
+    serviceMonitor: 
+      enabled: true
+      additionalLabels:
+        release: metrics
+  config:
+    log-format-escape-json: "true"
+    enale-real-ip: "true"
+  
+  service:
+    enabled: true
+    type: LoadBalancer
+    # On GKE, prefer Cluster to avoid HC issues unless you truly need node-preserved client IPs
+    externalTrafficPolicy: Cluster
+
+
+  updateStrategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+
+
+
